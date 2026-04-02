@@ -12,6 +12,7 @@ A framework for managing AI-assisted software development projects with Claude C
 | `Project-template.md` | Template for writing a new project description file |
 | `.claude/commands/kickoff.md` | Custom skill: `/kickoff` — architectural kick off discussion |
 | `.claude/commands/setproject.md` | Custom skill: `/setproject` — load project context into a session |
+| `.claude/commands/todo.md` | Custom skill: `/todo` — manage per-project TODO items |
 
 ---
 
@@ -23,6 +24,7 @@ The two custom skills (`/kickoff` and `/setproject`) are Claude Code slash comma
 mkdir -p ~/.claude/commands
 cp .claude/commands/kickoff.md ~/.claude/commands/kickoff.md
 cp .claude/commands/setproject.md ~/.claude/commands/setproject.md
+cp .claude/commands/todo.md ~/.claude/commands/todo.md
 ```
 
 > **Note:** The skills contain a hardcoded base path (`/Users/ppowell/Documents/vibe-coder-framework`). If your framework directory is in a different location, update that path in each file before copying:
@@ -30,7 +32,8 @@ cp .claude/commands/setproject.md ~/.claude/commands/setproject.md
 > ```bash
 > sed -i '' 's|/Users/ppowell/Documents/vibe-coder-framework|/path/to/your/framework|g' \
 >   ~/.claude/commands/kickoff.md \
->   ~/.claude/commands/setproject.md
+>   ~/.claude/commands/setproject.md \
+>   ~/.claude/commands/todo.md
 > ```
 
 Once installed, the skills are available in any Claude Code session — no restart required.
@@ -68,6 +71,25 @@ Runs an architectural kick off discussion for a project. Claude leads a structur
 - **Deferral support** — say "skip" or "decide later" to defer a decision without blocking progress. Re-run `/kickoff NNN` to revisit deferred items.
 
 **When to use:** At the start of a new project (Phase 2: Kick Off), or any time requirements change and architectural decisions need revisiting.
+
+---
+
+### `/todo [subcommand or item]`
+
+Manages a `TODO.md` file inside the active project directory. Automatically detects the active project from conversation context.
+
+```
+/todo list                    # show all items grouped by status
+/todo add <description>       # add a new item to the backlog
+/todo <partial item name>     # move a backlog item to In Progress and begin work
+/todo done <partial item name># mark an item as done
+```
+
+**TODO file location:** `project-NNN/TODO.md`
+
+The file is human-readable markdown with three sections — **In Progress**, **Backlog**, **Done** — using standard checkbox syntax (`- [ ]` / `- [x]`). It is committed to the project's own git repo alongside the code.
+
+**When to use:** Any time during development to track what needs doing, what's in flight, and what's finished. Combine with `/setproject` at session start to resume from the current state.
 
 ---
 
