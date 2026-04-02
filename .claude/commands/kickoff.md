@@ -8,6 +8,36 @@ The user wants to run a kick off discussion for project: $ARGUMENTS
 
 The projects base directory is: /Users/ppowell/Documents/vibe-coder-framework
 
+## Step 0 — Help check
+
+If `$ARGUMENTS` is exactly `help`, print the following and stop:
+
+```
+/kickoff — architectural kick off discussion
+
+Usage:
+  /kickoff <project-id>    Run (or resume) the kick off for a project
+  /kickoff help            Show this help
+
+Arguments:
+  project-id    Accepts: 001, 1, project-001, or Project-001
+
+What it does:
+  Leads a structured conversation to work through key architectural
+  decisions and writes outcomes to docs/architecture.md,
+  docs/implementation-guide.md, and CLAUDE.md.
+
+Features:
+  Resume-aware    Skips already-decided items; only works pending ones
+  Ordered         Decisions that constrain later choices come first
+  Confirm-first   Confirms each decision before writing to disk
+  Deferral        Say "skip" to defer; re-run /kickoff to revisit
+
+When to use:
+  At the start of a new project (Kick Off phase), or when
+  requirements change and decisions need revisiting.
+```
+
 ## Step 1 — Locate the project
 
 If `$ARGUMENTS` is empty, ask: "Which project would you like to kick off? (e.g., `001`)" and stop until the user responds.

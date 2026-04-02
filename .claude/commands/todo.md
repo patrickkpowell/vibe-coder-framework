@@ -54,6 +54,31 @@ Normalize `$ARGUMENTS` by trimming whitespace.
 
 ---
 
+### If the argument is `help`
+
+Print the following usage text exactly and stop — do not read or modify TODO.md:
+
+```
+/todo — project task manager
+
+Usage:
+  /todo                              List all items (same as /todo list)
+  /todo list                         List all items grouped by status
+  /todo add <description>            Add item to backlog
+  /todo add <desc> after <dep>       Add item with a dependency declared
+  /todo needs <item> after <dep>     Add a dependency to an existing item
+  /todo done <item>                  Mark an item as done
+  /todo <item>                       Start working on an item (moves to In Progress)
+  /todo help                         Show this help
+
+Notes:
+  - <item> and <dep> are case-insensitive partial matches
+  - Blocked items cannot be started until their dependencies are done
+  - TODO.md lives in the active project directory (project-NNN/TODO.md)
+```
+
+---
+
 ### If the argument is empty or `list`
 
 Display all items grouped by section. For each item show its description and, if it has unmet dependencies, show them indented beneath it as `⚠ needs: <dep>`. Done items in the Done section show with strikethrough. Use this format:
