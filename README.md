@@ -86,6 +86,25 @@ See `Projects.md` for the full playbook including entry/exit criteria for each p
 
 ---
 
+## Naming Conventions
+
+The skills construct file paths from a project number, so the files on disk **must** follow these exact formats:
+
+| Artifact | Format | Example |
+|---|---|---|
+| Project description file | `Project-NNN.md` | `Project-001.md` |
+| Project directory | `project-NNN/` | `project-001/` |
+
+Rules:
+- `NNN` is a **zero-padded, three-digit number** — `001`, `042`, `100`.
+- The description file uses a **capital P** (`Project-001.md`).
+- The directory uses **all lowercase** (`project-001/`).
+- Both must use the **same number**.
+
+The skills accept flexible input (`/kickoff 1`, `/kickoff 001`, `/kickoff project-001`, `/kickoff Project-001` all work), but they always look for files using the canonical format above. If the files on disk don't match, the skill will report the path it checked and stop.
+
+---
+
 ## Starting a New Project
 
 1. Copy `Project-template.md` to `Project-NNN.md` (e.g., `Project-002.md`) and fill it in.
