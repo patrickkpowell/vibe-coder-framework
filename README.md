@@ -10,21 +10,23 @@ A framework for managing AI-assisted software development projects with Claude C
 |---|---|
 | `Projects.md` | Master playbook — workflow phases, directory standards, agent team guidance, security checklist |
 | `Project-template.md` | Template for writing a new project description file |
-| `.claude/commands/kickoff.md` | Custom skill: `/kickoff` — architectural kick off discussion |
-| `.claude/commands/setproject.md` | Custom skill: `/setproject` — load project context into a session |
-| `.claude/commands/todo.md` | Custom skill: `/todo` — manage per-project TODO items |
+| `.claude/commands/kickoff.md` | Skill: `/kickoff` — architectural kick off discussion |
+| `.claude/commands/setproject.md` | Skill: `/setproject` — load project context into a session |
+| `.claude/commands/todo.md` | Skill: `/todo` — manage per-project TODO items |
+| `.claude/commands/projectinit.md` | Skill: `/projectinit` — scaffold a new numbered project directory |
 
 ---
 
 ## Installing the Skills
 
-The two custom skills (`/kickoff` and `/setproject`) are Claude Code slash commands. They live in `.claude/commands/` in this repo. To install them, copy them into your global Claude Code commands directory:
+The custom skills are Claude Code slash commands stored in `.claude/commands/`. To install them, copy them into your global Claude Code commands directory:
 
 ```bash
 mkdir -p ~/.claude/commands
 cp .claude/commands/kickoff.md ~/.claude/commands/kickoff.md
 cp .claude/commands/setproject.md ~/.claude/commands/setproject.md
 cp .claude/commands/todo.md ~/.claude/commands/todo.md
+cp .claude/commands/projectinit.md ~/.claude/commands/projectinit.md
 ```
 
 > **Note:** The skills contain a hardcoded base path (`/Users/ppowell/Documents/vibe-coder-framework`). If your framework directory is in a different location, update that path in each file before copying:
@@ -33,7 +35,8 @@ cp .claude/commands/todo.md ~/.claude/commands/todo.md
 > sed -i '' 's|/Users/ppowell/Documents/vibe-coder-framework|/path/to/your/framework|g' \
 >   ~/.claude/commands/kickoff.md \
 >   ~/.claude/commands/setproject.md \
->   ~/.claude/commands/todo.md
+>   ~/.claude/commands/todo.md \
+>   ~/.claude/commands/projectinit.md
 > ```
 
 Once installed, the skills are available in any Claude Code session — no restart required.
@@ -41,6 +44,38 @@ Once installed, the skills are available in any Claude Code session — no resta
 ---
 
 ## Using the Skills
+
+### `/projectinit [project-name]`
+
+Scaffolds a new numbered project directory with the full standard layout. Auto-detects the next available project number.
+
+```
+/projectinit "Home Automation Controller"
+```
+
+Creates:
+```
+project-NNN/
+├── CLAUDE.md              # Project context for Claude Code sessions
+├── TODO.md                # Task tracker (used by /todo)
+├── README.md              # Project readme
+├── .env.example           # Environment variable template
+├── .gitignore             # Standard Python gitignore
+├── pyproject.toml         # Python project config with hatchling
+├── src/                   # Python source packages
+├── tests/unit/            # Unit tests
+├── tests/integration/     # Integration tests
+├── docs/architecture.md   # Architecture decisions (populated by /kickoff)
+├── docs/implementation-guide.md
+├── docs/specs/            # Component specs (write before implementing)
+└── infra/migrations/      # Database migrations
+```
+
+Also creates `Project-NNN.md` in the framework root from the template, and optionally initializes a git repository with an initial commit.
+
+**When to use:** At the start of every new project, before running `/kickoff`.
+
+---
 
 ### `/setproject [project-id]`
 
@@ -83,6 +118,7 @@ Manages a `TODO.md` file inside the active project directory. Automatically dete
 /todo add <description>       # add a new item to the backlog
 /todo <partial item name>     # move a backlog item to In Progress and begin work
 /todo done <partial item name># mark an item as done
+/todo decide <topic>          # record an architecture or implementation decision
 ```
 
 **TODO file location:** `project-NNN/TODO.md`
@@ -96,7 +132,7 @@ The file is human-readable markdown with three sections — **In Progress**, **B
 ## Project Workflow Overview
 
 ```
-Phase 1: Initial Setup       → Create directory structure, init git repo, write Project-NNN.md
+Phase 1: Initial Setup       → /projectinit — scaffold directory, init git repo
 Phase 2: Kick Off            → /kickoff NNN — discuss and record all architecture decisions
 Phase 3: Infrastructure      → Deploy databases, services, docker-compose
 Phase 4: Development         → Write code on feature branches, human review before merge
@@ -129,9 +165,8 @@ The skills accept flexible input (`/kickoff 1`, `/kickoff 001`, `/kickoff projec
 
 ## Starting a New Project
 
-1. Copy `Project-template.md` to `Project-NNN.md` (e.g., `Project-002.md`) and fill it in.
-2. Create `project-NNN/` with the standard directory structure (see `Projects.md`).
-3. Initialize a git repo inside `project-NNN/` and push it to GitHub as its own repo.
-4. Run `/kickoff NNN` to begin the architectural discussion.
+1. Run `/projectinit "Project Name"` — scaffolds the directory and creates `Project-NNN.md`.
+2. Run `/kickoff NNN` to begin the architectural discussion.
+3. Initialize a git repo inside `project-NNN/` and push to GitHub as its own repo (if not done by projectinit).
 
 Each project lives in its own git repository (`project-NNN/`). The framework directory (`vibe-coder-framework`) is a separate repo that tracks the framework itself — project directories are excluded from its `.gitignore`.
