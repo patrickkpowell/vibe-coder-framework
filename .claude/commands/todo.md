@@ -1,6 +1,6 @@
 ---
-description: Manage project TODO items — list, add, start, and complete tasks
-argument-hint: [list | add <description> [after <dep>] | needs <item> after <dep> | done <item> | <item to start>]
+description: Manage project TODO items — list, add, start, complete tasks, and record decisions
+argument-hint: [list | add <desc> [after <dep>] | needs <item> after <dep> | done <item> | decide <topic> | <item to start>]
 allowed-tools: Read, Write, Edit, Glob
 ---
 
@@ -12,7 +12,10 @@ The projects base directory is: /Users/ppowell/Documents/vibe-coder-framework
 
 Use Glob to find all `project-*/CLAUDE.md` files under the base directory. If there is only one project directory, use it. If there are multiple, infer the active project from the conversation context (most recently mentioned project, or a prior `/setproject` call). If the active project is ambiguous and cannot be inferred, ask the user: "Which project? (e.g., `001`)" and stop until they respond.
 
-The TODO file path is: `{base}/project-NNN/TODO.md`
+Key file paths for the project (substitute the correct NNN):
+- TODO: `{base}/project-NNN/TODO.md`
+- Architecture decisions: `{base}/project-NNN/docs/architecture.md`
+- Implementation guide: `{base}/project-NNN/docs/implementation-guide.md`
 
 ## Step 2 — Locate or initialize TODO.md
 
@@ -48,6 +51,26 @@ An item is **blocked** if any of its dependencies are not yet in the **Done** se
 
 When parsing items, always strip the `*(needs: ...)*` suffix before displaying the item description to the user.
 
+## Decision format
+
+Decisions written to `docs/architecture.md` use this format, appended under `## Decisions`:
+
+```markdown
+### <Topic>
+- **Status:** Decided
+- **Decision:** <The choice made>
+- **Rationale:** <Why — constraints, tradeoffs, requirements it satisfies>
+- **Date:** YYYY-MM-DD
+```
+
+After writing to `architecture.md`, update its `*Last updated:*` date to today.
+
+Decisions written to `docs/implementation-guide.md` update the relevant existing section inline (Tech Stack Summary, Component Breakdown, Development Environment Setup, etc.) rather than appending a new block.
+
+**How to choose the right file:**
+- **architecture.md** — which tool, library, protocol, pattern, or service was chosen and why (e.g. "use tabulate for table output", "use --host-timeout to prevent hung scans")
+- **implementation-guide.md** — how something is concretely implemented, component wiring, environment setup steps, or corrections to existing implementation notes
+
 ## Step 3 — Parse the argument and act
 
 Normalize `$ARGUMENTS` by trimming whitespace and stripping a single leading `/` if present (so `/list`, `/add`, `/done` etc. work the same as `list`, `add`, `done`).
@@ -56,10 +79,10 @@ Normalize `$ARGUMENTS` by trimming whitespace and stripping a single leading `/`
 
 ### If the argument is `help`
 
-Print the following usage text exactly and stop — do not read or modify TODO.md:
+Print the following usage text exactly and stop — do not read or modify any files:
 
 ```
-/todo — project task manager
+/todo — project task manager with decision tracking
 
 Usage:
   /todo                              List all items (same as /todo list)
@@ -67,13 +90,16 @@ Usage:
   /todo add <description>            Add item to backlog
   /todo add <desc> after <dep>       Add item with a dependency declared
   /todo needs <item> after <dep>     Add a dependency to an existing item
-  /todo done <item>                  Mark an item as done
-  /todo <item>                       Start working on an item (moves to In Progress)
+  /todo done <item>                  Mark an item as done (prompts for decisions)
+  /todo decide <topic>               Record a decision to architecture.md or implementation-guide.md
+  /todo <item>                       Start working on an item (moves to In Progress, surfaces context)
   /todo help                         Show this help
 
 Notes:
   - <item> and <dep> are case-insensitive partial matches
   - Blocked items cannot be started until their dependencies are done
+  - Starting an item surfaces relevant decisions from docs/architecture.md
+  - Completing an item prompts to capture any decisions made during the work
   - TODO.md lives in the active project directory (project-NNN/TODO.md)
 ```
 
@@ -131,13 +157,41 @@ Confirm: "*<item>* now depends on: *<dependency>*"
 
 ---
 
+### If the argument starts with `decide `
+
+The user wants to record a decision made during the current work.
+
+Extract the topic from everything after `decide `. Then:
+
+1. Read `docs/architecture.md` and `docs/implementation-guide.md` if they exist.
+
+2. Ask the user (if not already clear from context):
+   - "What was decided?" (the concrete choice)
+   - "What's the rationale?" (why this choice — constraints, tradeoffs)
+   - "Is this an architectural choice (tool/library/service/pattern) or an implementation detail (how it's wired up, env setup, component structure)?"
+
+3. Based on the answer, write to the appropriate file:
+   - **Architectural** → append a new `### <Topic>` block under `## Decisions` in `architecture.md` using the decision format above. Update `*Last updated:*`.
+   - **Implementation** → update the relevant section of `implementation-guide.md` inline.
+
+4. Confirm: "Recorded decision: *<topic>* → `docs/<file>`"
+
+If both files are absent, create stubs before writing.
+
+---
+
 ### If the argument starts with `done `
 
 Extract the search term (everything after `done `). Find the best matching item in **In Progress** first, then **Backlog**, using case-insensitive partial match against item descriptions (ignoring the `*(needs: ...)*` suffix). If multiple items match, list them and ask the user to be more specific.
 
 Move the matched item to the **Done** section and change `- [ ]` to `- [x]`. Strip the `*(needs: ...)*` suffix when moving to Done — it is no longer relevant.
 
-Confirm: "Marked done: *<item>*"
+Write the updated TODO.md.
+
+Then ask: "Were any decisions made while working on *<item>*? Describe them briefly, or say 'no' to skip."
+
+- If the user describes decisions, treat each one as a `decide` action: determine the type, ask for rationale if not provided, and write to the appropriate doc.
+- If the user says 'no' or similar, confirm: "Marked done: *<item>*" and stop.
 
 ---
 
@@ -155,9 +209,31 @@ Treat `$ARGUMENTS` as a search term. Find the best matching item in **Backlog** 
 Complete these first, or use `/todo done <dep>` to mark them done.
 ```
 
-If the item is unblocked (all deps done, or no deps), move it from **Backlog** to the top of the **In Progress** section (keep `- [ ]`, preserve the `*(needs: ...)*` suffix in the file even though it is now satisfied).
+If the item is unblocked (all deps done, or no deps):
 
-Confirm: "Started: *<item>*. It has been moved to In Progress."
+1. Move it from **Backlog** to the top of the **In Progress** section (keep `- [ ]`, preserve the `*(needs: ...)*` suffix in the file).
+
+2. Write the updated TODO.md.
+
+3. Read `docs/architecture.md` and `docs/implementation-guide.md` if they exist.
+
+4. Output a **Context for this task** block summarizing decisions already made that are relevant to this item. Scan for keywords from the item description (tool names, component names, protocol names) and surface matching decisions. Format:
+
+```
+**Started:** <item>
+
+**Relevant decisions from architecture.md:**
+- <Decision topic>: <one-line summary>
+- ...
+
+**Relevant notes from implementation-guide.md:**
+- <one-line note>
+- ...
+
+Use `/todo decide <topic>` at any time to record decisions made during this work.
+```
+
+If neither doc exists or no relevant decisions are found, just confirm: "Started: *<item>*. Use `/todo decide <topic>` to record decisions as you go."
 
 ---
 
