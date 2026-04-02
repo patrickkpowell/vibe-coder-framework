@@ -50,7 +50,7 @@ When parsing items, always strip the `*(needs: ...)*` suffix before displaying t
 
 ## Step 3 — Parse the argument and act
 
-Normalize `$ARGUMENTS` by trimming whitespace.
+Normalize `$ARGUMENTS` by trimming whitespace and stripping a single leading `/` if present (so `/list`, `/add`, `/done` etc. work the same as `list`, `add`, `done`).
 
 ---
 
