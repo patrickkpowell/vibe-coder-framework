@@ -1,0 +1,18 @@
+# Projects (each project is its own git repo)
+project-*/
+# Specific project description files (not template)
+Project-[0-9]*.md
+
+# Claude Code local settings (machine-specific permissions)
+.claude/settings.local.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+*.key
+*.pem
+credentials.*
+secrets.*
