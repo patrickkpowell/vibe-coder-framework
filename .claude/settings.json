@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)/scripts/session-sync.sh\""
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)/scripts/push-check.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}
