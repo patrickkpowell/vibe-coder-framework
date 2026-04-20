@@ -3,8 +3,9 @@ project-*/
 # Specific project description files (not template)
 Project-[0-9]*.md
 
-# Claude Code local settings (machine-specific permissions)
+# Claude Code local settings and runtime state (machine-specific)
 .claude/settings.local.json
+.claude/worktrees/
 
 # OS
 .DS_Store
