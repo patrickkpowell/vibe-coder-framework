@@ -20,13 +20,18 @@ Usage:
   /setproject help            Show this help
 
 Arguments:
-  project-id    Accepts: 001, 1, project-001, or Project-001
+  project-id    Accepts: framework, 001, 1, project-001, or Project-001
 
-What it reads:
+What it reads (numbered projects):
   Project-NNN.md                        High-level project description
   project-NNN/CLAUDE.md                 Conventions, phase, hard rules
   project-NNN/docs/architecture.md      Architectural decisions
   project-NNN/docs/implementation-guide.md  Implementation guide (if present)
+
+What it reads (framework):
+  README.md                             Framework overview
+  CLAUDE.md                             Framework conventions and skill index
+  Projects.md                           Workflow playbook
 
 What it outputs:
   A structured summary — project name, current phase, key decisions,
@@ -37,6 +42,44 @@ When to use:
 ```
 
 ## Step 1 — Locate the project
+
+### Special case — `framework`
+
+If `$ARGUMENTS` is `framework`, `vibe-coder-framework`, or `0`, load the framework itself as the active project.
+
+Read the following files:
+- `/Users/ppowell/Documents/vibe-coder-framework/README.md` — framework overview
+- `/Users/ppowell/Documents/vibe-coder-framework/CLAUDE.md` — conventions, skill index, hard rules
+- `/Users/ppowell/Documents/vibe-coder-framework/Projects.md` — workflow playbook
+
+Then output this summary and stop (do not proceed to Step 2):
+
+---
+**Active Project: vibe-coder-framework**
+
+**What it is:**
+The framework itself — custom Claude Code skills, project workflow standards, and Codex skill packages for AI-assisted software development.
+
+**Git repo:** `/Users/ppowell/Documents/vibe-coder-framework`
+
+**Installed skills:**
+List every `.md` file found under `/Users/ppowell/Documents/vibe-coder-framework/.claude/commands/` — one line each with a short description derived from the file's `description:` frontmatter field.
+
+**Key files:**
+- `CLAUDE.md` — framework conventions and skill index
+- `Projects.md` — master workflow playbook (phases, standards, security checklist)
+- `.claude/commands/` — all installed Claude Code skills
+- `.codex/skills/` — all Codex skills
+
+**Pending / open work:**
+Run `git -C /Users/ppowell/Documents/vibe-coder-framework status --short` and `git -C /Users/ppowell/Documents/vibe-coder-framework branch --format="%(refname:short) %(ahead-behind:main)" | grep -v "^main "` to report:
+- Any uncommitted changes in the working tree
+- Any local branches with commits ahead of main (candidate merge branches)
+
+---
+End with: "Framework context loaded. Use /merge framework to land pending branches, or ask about any skill."
+
+### Numbered projects
 
 The project argument may be provided as "Project-001", "project-001", "001", or "1". Normalize it to find the directory. The directory name format is lowercase: `project-NNN` (e.g., `project-001`).
 
