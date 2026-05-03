@@ -1,0 +1,126 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: matrix-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${MATRIX_POSTGRES_DB}
+      POSTGRES_USER: ${MATRIX_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${MATRIX_POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    volumes:
+      - /home/ppowell/matrix-data/postgres-data:/var/lib/postgresql/data
+    networks:
+      - matrix-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${MATRIX_POSTGRES_USER} -d ${MATRIX_POSTGRES_DB}"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  synapse:
+    image: matrixdotorg/synapse:latest
+    container_name: matrix-synapse
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SYNAPSE_SERVER_NAME: ${MATRIX_SERVER_NAME}
+      SYNAPSE_REPORT_STATS: "no"
+      TZ: ${TZ:-America/Chicago}
+    volumes:
+      - /home/ppowell/matrix-data/synapse-data:/data
+    ports:
+      - "8008:8008"
+    networks:
+      - matrix-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8008/_matrix/client/versions"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  matrix-api:
+    build:
+      context: ../..
+      dockerfile: infra/matrix/api.Dockerfile
+    container_name: matrix-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      synapse:
+        condition: service_healthy
+    ports:
+      - "8083:8083"
+    networks:
+      - matrix-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  matrix-mcp:
+    build:
+      context: ../..
+      dockerfile: infra/matrix/mcp.Dockerfile
+    container_name: matrix-mcp
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      SESSIONS_DIR: /srv/vibe-code/claude-sessions
+    depends_on:
+      synapse:
+        condition: service_healthy
+    ports:
+      - "8093:8093"
+    volumes:
+      - /srv/vibe-code:/srv/vibe-code
+    networks:
+      - matrix-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8093/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  matrix-claude-bridge:
+    build:
+      context: ../..
+      dockerfile: infra/matrix/bridge.Dockerfile
+    container_name: matrix-claude-bridge
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      SECRETS_FILE: /secrets/secrets.encrypted.yaml
+      SOPS_AGE_KEY_FILE: /secrets/age/keys.txt
+      MATRIX_HOMESERVER_URL: http://localhost:8008
+      MATRIX_BRIDGE_SYNC_TIMEOUT_MS: "30000"
+      MATRIX_BRIDGE_PROJECTS_DIR: /srv/claude-matrix/projects
+      MATRIX_BRIDGE_SKILLS_DIR: /srv/claude-matrix/skills
+      SESSIONS_DIR: /srv/vibe-code/claude-sessions
+      HOME: /home/ppowell
+    volumes:
+      - /home/ppowell/project-001/secrets.encrypted.yaml:/secrets/secrets.encrypted.yaml:ro
+      - /home/ppowell/.config/sops/age/keys.txt:/secrets/age/keys.txt:ro
+      - /srv/claude-matrix/projects:/srv/claude-matrix/projects:ro
+      - /srv/claude-matrix/skills:/srv/claude-matrix/skills:ro
+      - /home/ppowell/project-001:/home/ppowell/project-001:ro
+      - /home/ppowell/.claude:/home/ppowell/.claude
+      - /home/ppowell/.claude.json:/home/ppowell/.claude.json
+      - /srv/vibe-code:/srv/vibe-code
+    depends_on:
+      synapse:
+        condition: service_healthy
+
+networks:
+  matrix-net:
+    driver: bridge

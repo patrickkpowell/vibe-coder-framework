@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+dist/
+build/
+
+# Docker runtime data (created at deploy time on agent01)
+infra/synapse-data/
+infra/postgres-data/
+
+# Secrets (never commit plaintext)
+.env
+infra/.env
+infra/*.env
+!infra/.env.example
+
+# OS
+.DS_Store

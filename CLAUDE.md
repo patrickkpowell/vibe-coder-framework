@@ -1,23 +1,57 @@
 # vibe-coder-framework
 
-A framework for managing AI-assisted software development projects with Claude Code and Codex. Defines a repeatable workflow, directory standards, and custom skills for discussion-driven, phase-based project development.
+A framework for managing AI-assisted software development projects with Claude Code and Codex. Defines a repeatable workflow, directory standards, custom skills, and shared platform services for discussion-driven, phase-based project development.
 
 ---
 
 ## What's in this repo
 
-| File / Directory | Purpose |
+### Framework Playbook
+
+| File | Purpose |
 |---|---|
 | `Projects.md` | Master playbook — workflow phases, directory standards, agent team guidance, security checklist |
 | `Project-template.md` | Template for writing a new project description file |
-| `.claude/commands/kickoff.md` | Skill: `/kickoff` — architectural kick off discussion |
-| `.claude/commands/setproject.md` | Skill: `/setproject` — load project context into a session |
-| `.claude/commands/todo.md` | Skill: `/todo` — manage per-project TODO items |
-| `.claude/commands/projectinit.md` | Skill: `/projectinit` — scaffold a new numbered project directory |
-| `.codex/skills/kickoff/SKILL.md` | Codex skill: `kickoff` — architectural kick off discussion |
-| `.codex/skills/setproject/SKILL.md` | Codex skill: `setproject` — load project context into a session |
-| `.codex/skills/todo/SKILL.md` | Codex skill: `todo` — manage per-project TODO items |
-| `.codex/skills/projectinit/SKILL.md` | Codex skill: `projectinit` — scaffold a new numbered project directory |
+
+### Claude Code Skills (`.claude/commands/`)
+
+| Skill | Command | Purpose |
+|---|---|---|
+| `kickoff.md` | `/kickoff [project-id]` | Guide an architectural kickoff discussion and record decisions |
+| `setproject.md` | `/setproject [project-id]` | Load project context into the current session |
+| `projectinit.md` | `/projectinit [project-name]` | Scaffold a new numbered project directory |
+| `todo.md` | `/todo [subcommand]` | Manage per-project TODO items |
+| `spec-review.md` | `/spec-review [project-id] <spec>` | Analyze a spec against current architecture |
+| `merge.md` | `/merge [project-id]` | Merge worktree branches into main and push |
+| `handoff.md` | `/handoff` | Save session context to NAS for pickup on another device |
+| `pickup.md` | `/pickup` | Resume a named session from NAS |
+| `sessions.md` | `/sessions` | Manage named Claude sessions on NAS |
+| `notify.md` | `/notify` | Manage desktop-to-Matrix task notifications |
+| `usage.md` | `/usage` | Check Claude usage state |
+| `ovpn_certs.md` | `/ovpn_certs` | Create or renew OpenVPN certificates via OPNsense API |
+
+### Codex Skills (`.codex/skills/`)
+
+| Skill | Purpose |
+|---|---|
+| `kickoff/SKILL.md` | Architectural kickoff discussion |
+| `setproject/SKILL.md` | Load project context into a session |
+| `projectinit/SKILL.md` | Scaffold a new numbered project directory |
+| `todo/SKILL.md` | Manage per-project TODO items |
+| `wherearewe/SKILL.md` | Orient the session — active TODO, notes, architecture |
+
+### Matrix Platform (`matrix/`)
+
+A shared platform service for the framework, not tied to any specific project.
+
+| Component | Purpose |
+|---|---|
+| `matrix/src/matrix_common/` | Shared Matrix client library (HTTP, retry, destinations) |
+| `matrix/src/matrix_api/` | FastAPI REST notification service |
+| `matrix/src/matrix_mcp/` | FastMCP MCP server exposing Matrix notification tools |
+| `matrix/src/matrix_bridge/` | Stateful Matrix-Claude bridge — runs Claude sessions from Matrix |
+| `matrix/infra/` | Docker Compose, Dockerfiles, requirements for all Matrix services |
+| `matrix/docs/specs/` | Specifications for the Matrix platform components |
 
 ---
 
@@ -25,41 +59,19 @@ A framework for managing AI-assisted software development projects with Claude C
 
 ### Claude Code
 
-The custom skills are Claude Code slash commands stored in `.claude/commands/`. To install them, copy them into your global Claude Code commands directory:
-
 ```bash
 mkdir -p ~/.claude/commands
-cp .claude/commands/kickoff.md ~/.claude/commands/kickoff.md
-cp .claude/commands/setproject.md ~/.claude/commands/setproject.md
-cp .claude/commands/todo.md ~/.claude/commands/todo.md
-cp .claude/commands/projectinit.md ~/.claude/commands/projectinit.md
+cp .claude/commands/*.md ~/.claude/commands/
 ```
 
-> **Note:** The skills contain a hardcoded base path (`/Users/ppowell/Documents/vibe-coder-framework`). If your framework directory is in a different location, update that path in each file before copying:
+> **Note:** Some skills contain a hardcoded base path (`/Users/ppowell/Documents/vibe-coder-framework`). Update if your path differs:
 >
 > ```bash
 > sed -i '' 's|/Users/ppowell/Documents/vibe-coder-framework|/path/to/your/framework|g' \
->   ~/.claude/commands/kickoff.md \
->   ~/.claude/commands/setproject.md \
->   ~/.claude/commands/todo.md \
->   ~/.claude/commands/projectinit.md
+>   ~/.claude/commands/*.md
 > ```
 
-Once installed, the skills are available in any Claude Code session — no restart required.
-
 ### Codex
-
-Codex skills are included in this repo under `.codex/skills/`:
-
-```bash
-.codex/skills/
-├── kickoff/SKILL.md
-├── projectinit/SKILL.md
-├── setproject/SKILL.md
-└── todo/SKILL.md
-```
-
-To install them into your Codex home directory:
 
 ```bash
 mkdir -p ~/.codex/skills
@@ -67,23 +79,14 @@ cp -R .codex/skills/kickoff ~/.codex/skills/kickoff
 cp -R .codex/skills/setproject ~/.codex/skills/setproject
 cp -R .codex/skills/todo ~/.codex/skills/todo
 cp -R .codex/skills/projectinit ~/.codex/skills/projectinit
+cp -R .codex/skills/wherearewe ~/.codex/skills/wherearewe
 ```
-
-These Codex skills are adapted from the Claude slash commands and keep the same core workflows:
-- `projectinit`
-- `setproject`
-- `kickoff`
-- `todo`
-
-Unlike the Claude command versions, the Codex skills are written to prefer the current workspace root instead of a hardcoded framework path.
 
 ---
 
 ## Using the Skills
 
 ### In Codex
-
-Ask for the workflow directly in natural language, for example:
 
 ```text
 Initialize a new project called Home Automation Controller
@@ -119,8 +122,6 @@ project-NNN/
 ├── docs/specs/            # Component specs (write before implementing)
 └── infra/migrations/      # Database migrations
 ```
-
-Also creates `Project-NNN.md` in the framework root from the template, and optionally initializes a git repository with an initial commit.
 
 **When to use:** At the start of every new project, before running `/kickoff`.
 
@@ -172,9 +173,53 @@ Manages a `TODO.md` file inside the active project directory. Automatically dete
 
 **TODO file location:** `project-NNN/TODO.md`
 
-The file is human-readable markdown with three sections — **In Progress**, **Backlog**, **Done** — using standard checkbox syntax (`- [ ]` / `- [x]`). It is committed to the project's own git repo alongside the code.
-
 **When to use:** Any time during development to track what needs doing, what's in flight, and what's finished. Combine with `/setproject` at session start to resume from the current state.
+
+---
+
+### `/spec-review [project-id] <spec>`
+
+Analyzes a spec file against the current architecture. Identifies impacted components, required changes, and produces a transition plan when services are being replaced.
+
+---
+
+### `/merge [project-id]`
+
+Lists branches ahead of main, lets you choose which to merge, merges into main, pushes to GitHub, and offers worktree/branch cleanup.
+
+```
+/merge 001        # merge branches for project-001
+/merge framework  # merge branches for this framework repo
+```
+
+---
+
+### `/handoff` and `/pickup`
+
+Save and resume session context across devices via NAS.
+
+---
+
+### `/notify [on|off|status]`
+
+Controls desktop-to-Matrix task notifications. When enabled, Claude sends a Matrix message when it completes a task or needs input.
+
+---
+
+## Matrix Platform
+
+The `matrix/` directory contains platform services shared across all projects. It is not part of any `project-NNN/`.
+
+**Services:**
+- `matrix-api` — REST notification service (`POST /send` → Matrix room)
+- `matrix-mcp` — MCP server for Claude/agent Matrix notifications
+- `matrix-bridge` — Stateful Claude session control plane driven from Matrix rooms
+
+**Specs:**
+- `matrix/docs/specs/matrix-notification-mcp-spec.md` — Synapse + matrix-api + matrix-mcp deployment and spec
+- `matrix/docs/specs/matrix-claude-comm-channel-spec.md` — Bridge command grammar, session model, usage expiry, transport modes
+
+**Deploy:** `matrix/infra/docker-compose.yml` on agent01. Secrets SOPS-encrypted, injected at runtime.
 
 ---
 
