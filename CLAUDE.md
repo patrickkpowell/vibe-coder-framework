@@ -17,9 +17,10 @@ A framework for managing AI-assisted software development projects with Claude C
 
 | Skill | Command | Purpose |
 |---|---|---|
-| `kickoff.md` | `/kickoff [project-id]` | Guide an architectural kickoff discussion and record decisions |
+| `listprojects.md` | `/listprojects` | List all projects with titles and descriptions |
 | `setproject.md` | `/setproject [project-id]` | Load project context into the current session |
 | `projectinit.md` | `/projectinit [project-name]` | Scaffold a new numbered project directory |
+| `kickoff.md` | `/kickoff [project-id]` | Guide an architectural kickoff discussion and record decisions |
 | `todo.md` | `/todo [subcommand]` | Manage per-project TODO items |
 | `spec-review.md` | `/spec-review [project-id] <spec>` | Analyze a spec against current architecture |
 | `merge.md` | `/merge [project-id]` | Merge worktree branches into main and push |
