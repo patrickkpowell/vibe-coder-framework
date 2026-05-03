@@ -41,6 +41,7 @@ Utility
   !wherearewe          Orient session: active item, where we left off, decisions
   !ping                Check bot is alive
   !reauth              Reload SOPS secrets and hot-swap Matrix token + Claude API key
+  !login               Re-authenticate Claude via browser OAuth (when refresh token is expired)
   !help                Show this message
 
 Note: both ! and / prefixes are accepted.\

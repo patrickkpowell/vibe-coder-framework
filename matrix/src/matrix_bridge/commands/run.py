@@ -22,6 +22,10 @@ def configure_runner(api_key: str) -> None:
     _runner.update_api_key(api_key)
 
 
+def get_runner() -> ClaudeRunner:
+    return _runner
+
+
 def _new_task_id() -> str:
     ts = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=4))
@@ -120,7 +124,7 @@ async def handle_message(ctx: CommandContext, body: str) -> None:
             ctx.room_id,
             f"Claude authentication error — Anthropic API key or OAuth session is invalid.\n"
             f"Task {task.task_id} cancelled.\n"
-            f"Use /reauth if an API key is stored in secrets, or SSH to agent01 and run `claude login`.",
+            f"Run !reauth to reload secrets and verify OAuth. If that fails, run !login to re-authenticate via browser.",
         )
         return
 

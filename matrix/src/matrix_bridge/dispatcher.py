@@ -10,6 +10,7 @@ from matrix_bridge.commands.handoff import (
     handle_summarize,
 )
 from matrix_bridge.commands.help import handle_help
+from matrix_bridge.commands.login import handle_login
 from matrix_bridge.commands.reauth import handle_reauth
 from matrix_bridge.commands.transport import handle_desktopmode, handle_matrixmode
 from matrix_bridge.commands.ping import handle_ping
@@ -52,6 +53,7 @@ _HANDLERS = {
     "desktopmode": handle_desktopmode,
     "matrixmode": handle_matrixmode,
     "reauth": handle_reauth,
+    "login": handle_login,
 }
 
 
